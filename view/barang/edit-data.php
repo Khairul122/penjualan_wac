@@ -66,10 +66,6 @@ $data = mysqli_fetch_assoc($result);
                           <label>Harga Jual</label>
                           <input type="number" step="0.01" class="form-control" name="harga_jual" value="<?= $data['harga_jual'] ?>" required>
                         </div>
-                        <div class="form-group">
-                          <label>Stok</label>
-                          <input type="number" class="form-control" name="stok" value="<?= $data['stok'] ?>" required>
-                        </div>
                       </div>
                     </div>
 

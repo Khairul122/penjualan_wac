@@ -36,7 +36,6 @@
                                                     <th>Satuan</th>
                                                     <th>Harga Beli</th>
                                                     <th>Harga Jual</th>
-                                                    <th>Stok</th>
                                                     <th class="text-center">Aksi</th>
                                                 </tr>
                                             </thead>
@@ -51,7 +50,6 @@
                                                         <td><?= htmlspecialchars($row['satuan']); ?></td>
                                                         <td>Rp <?= number_format($row['harga_beli'], 0, ',', '.'); ?></td>
                                                         <td>Rp <?= number_format($row['harga_jual'], 0, ',', '.'); ?></td>
-                                                        <td><?= $row['stok']; ?></td>
                                                         <td>
                                                             <a href="index.php?page=edit-data&id=<?= $row['id_barang']; ?>" class="btn btn-warning btn-sm">
                                                                 <i class="mdi mdi-pencil"></i>
@@ -59,7 +57,6 @@
                                                             <a href="index.php?page=controller/ProdukController&method=DELETE&id=<?= $row['id_barang']; ?>" onclick="return confirm('Yakin ingin menghapus?')" class="btn btn-danger btn-sm">
                                                                 <i class="mdi mdi-delete"></i>
                                                             </a>
-
                                                         </td>
                                                     </tr>
                                                 <?php endwhile; ?>

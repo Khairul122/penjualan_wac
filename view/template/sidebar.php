@@ -2,55 +2,78 @@
 $menu = [
   [
     'title' => 'Dashboard',
-    'icon' => 'mdi-grid-large',
+    'icon' => 'mdi-view-dashboard',
     'url' => 'index.php?page=dashboard',
-    'children' => []
+    'level' => ['admin', 'kasir', 'pimpinan']
   ],
   [
     'title' => 'Barang',
-    'icon' => 'mdi-package-variant',
+    'icon' => 'mdi-cube-outline',
     'url' => 'index.php?page=barang',
-    'children' => []
+    'level' => ['admin']
   ],
   [
     'title' => 'Penjualan',
-    'icon' => 'mdi-package-variant',
+    'icon' => 'mdi-cart-outline',
     'url' => 'index.php?page=penjualan',
-    'children' => []
+    'level' => ['admin', 'kasir']
+  ],
+  [
+    'title' => 'Inventory',
+    'icon' => 'mdi-warehouse',
+    'url' => 'index.php?page=inventory',
+    'level' => ['admin']
+  ],
+  [
+    'title' => 'Perhitungan WAC',
+    'icon' => 'mdi-calculator-variant-outline',
+    'url' => 'index.php?page=wac',
+    'level' => ['admin', 'pimpinan']
+  ],
+  [
+    'title' => 'Laporan',
+    'icon' => 'mdi-file-chart-outline',
+    'url' => 'index.php?page=laporan',
+    'level' => ['admin', 'pimpinan']
   ]
 ];
 
 $currentPage = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+$userLevel = isset($_SESSION['level']) ? $_SESSION['level'] : '';
 ?>
 
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
   <ul class="nav">
     <?php foreach ($menu as $item): ?>
-      <li class="nav-item">
-        <?php if (empty($item['children'])): ?>
-          <a class="nav-link <?php echo $currentPage == basename($item['url'], '.php') ? 'active' : ''; ?>" href="<?php echo $item['url']; ?>">
-            <i class="mdi <?php echo $item['icon']; ?> menu-icon"></i>
-            <span class="menu-title"><?php echo $item['title']; ?></span>
-          </a>
-        <?php else: ?>
-          <a class="nav-link" data-bs-toggle="collapse" href="#menu-<?php echo strtolower($item['title']); ?>" aria-expanded="false">
-            <i class="menu-icon mdi <?php echo $item['icon']; ?>"></i>
-            <span class="menu-title"><?php echo $item['title']; ?></span>
-            <i class="menu-arrow"></i>
-          </a>
-          <div class="collapse" id="menu-<?php echo strtolower($item['title']); ?>">
-            <ul class="nav flex-column sub-menu">
-              <?php foreach ($item['children'] as $child): ?>
-                <li class="nav-item">
-                  <a class="nav-link <?php echo $currentPage == basename($child['url'], '.php') ? 'active' : ''; ?>" href="<?php echo $child['url']; ?>">
-                    <?php echo $child['title']; ?>
-                  </a>
-                </li>
-              <?php endforeach; ?>
-            </ul>
-          </div>
-        <?php endif; ?>
-      </li>
+      <?php if (in_array($userLevel, $item['level'])): ?>
+        <li class="nav-item">
+          <?php if (empty($item['children'])): ?>
+            <a class="nav-link <?php echo $currentPage == basename($item['url'], '.php') ? 'active' : ''; ?>" href="<?php echo $item['url']; ?>">
+              <i class="mdi <?php echo $item['icon']; ?> menu-icon"></i>
+              <span class="menu-title"><?php echo $item['title']; ?></span>
+            </a>
+          <?php else: ?>
+            <a class="nav-link" data-bs-toggle="collapse" href="#menu-<?php echo strtolower($item['title']); ?>" aria-expanded="false">
+              <i class="menu-icon mdi <?php echo $item['icon']; ?>"></i>
+              <span class="menu-title"><?php echo $item['title']; ?></span>
+              <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="menu-<?php echo strtolower($item['title']); ?>">
+              <ul class="nav flex-column sub-menu">
+                <?php foreach ($item['children'] as $child): ?>
+                  <?php if (in_array($userLevel, $child['level'])): ?>
+                    <li class="nav-item">
+                      <a class="nav-link <?php echo $currentPage == basename($child['url'], '.php') ? 'active' : ''; ?>" href="<?php echo $child['url']; ?>">
+                        <?php echo $child['title']; ?>
+                      </a>
+                    </li>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+              </ul>
+            </div>
+          <?php endif; ?>
+        </li>
+      <?php endif; ?>
     <?php endforeach; ?>
   </ul>
 </nav>

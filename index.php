@@ -47,7 +47,40 @@ switch ($page) {
     case 'invoice':
         include 'view/penjualan/invoice.php';
         break;
-    
+
+    // Inventory
+    case 'inventory':
+        include 'view/inventory/index.php';
+        break;
+    case 'tambah-inventory':
+        include 'view/inventory/tambah-data.php';
+        break;
+    case 'edit-inventory':
+        include 'view/inventory/edit-data.php';
+        break;
+
+    // WAC
+    case 'wac':
+        include 'view/wac/index.php';
+        break;
+
+    // Laporan
+    case 'laporan':
+        include 'view/laporan/index.php';
+        break;
+    case 'laporan-penjualan':
+        include 'view/laporan/laporan-penjualan.php';
+        break;
+    case 'laporan-inventory':
+        include 'view/laporan/laporan-inventory.php';
+        break;
+    case 'laporan-barang':
+        include 'view/laporan/laporan-barang.php';
+        break;
+    case 'laporan-wac':
+        include 'view/laporan/laporan-wac.php';
+        break;
+
     // Default login
     default:
         include 'view/login.php';

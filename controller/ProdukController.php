@@ -9,10 +9,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_barang'])) {
     $satuan      = $_POST['satuan'];
     $harga_beli  = $_POST['harga_beli'];
     $harga_jual  = $_POST['harga_jual'];
-    $stok        = $_POST['stok'];
 
-    $query = "INSERT INTO barang (kode_barang, nama_barang, kategori, satuan, harga_beli, harga_jual, stok)
-              VALUES ('$kode_barang', '$nama_barang', '$kategori', '$satuan', '$harga_beli', '$harga_jual', '$stok')";
+    $query = "INSERT INTO barang (kode_barang, nama_barang, kategori, satuan, harga_beli, harga_jual)
+              VALUES ('$kode_barang', '$nama_barang', '$kategori', '$satuan', '$harga_beli', '$harga_jual')";
 
     if (mysqli_query($koneksi, $query)) {
         echo "<script>alert('Data barang berhasil ditambahkan'); window.location.href='index.php?page=barang';</script>";
@@ -31,7 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['method']) && $_POST['
     $satuan      = $_POST['satuan'];
     $harga_beli  = $_POST['harga_beli'];
     $harga_jual  = $_POST['harga_jual'];
-    $stok        = $_POST['stok'];
 
     $query = "UPDATE barang SET 
                 kode_barang='$kode_barang',
@@ -39,8 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['method']) && $_POST['
                 kategori='$kategori',
                 satuan='$satuan',
                 harga_beli='$harga_beli',
-                harga_jual='$harga_jual',
-                stok='$stok'
+                harga_jual='$harga_jual'
               WHERE id_barang='$id_barang'";
 
     if (mysqli_query($koneksi, $query)) {
@@ -55,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['method']) && $_POST['
 if ((isset($_GET['id']) && isset($_GET['method']) && $_GET['method'] === 'DELETE') ||
     ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['method']) && $_POST['method'] === 'DELETE')
 ) {
-
     $id_barang = isset($_GET['id']) ? $_GET['id'] : $_POST['id_barang'];
 
     $query = "DELETE FROM barang WHERE id_barang='$id_barang'";

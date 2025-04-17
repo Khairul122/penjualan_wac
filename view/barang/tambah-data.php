@@ -59,10 +59,6 @@ if ($lastCode) {
                           <label>Harga Jual</label>
                           <input type="text" class="form-control rupiah" id="harga_jual" name="harga_jual" placeholder="Rp 0" required>
                         </div>
-                        <div class="form-group">
-                          <label>Stok</label>
-                          <input type="number" class="form-control" name="stok" placeholder="Jumlah stok awal" required>
-                        </div>
                       </div>
                     </div>
 
