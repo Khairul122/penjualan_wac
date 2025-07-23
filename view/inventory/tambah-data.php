@@ -2,7 +2,6 @@
 include 'view/template/header.php';
 include 'koneksi.php';
 
-// Generate kode_transaksi
 $result = mysqli_query($koneksi, "SELECT MAX(kode_transaksi) AS kode_terakhir FROM inventory");
 $data = mysqli_fetch_assoc($result);
 $lastCode = $data['kode_terakhir'];
@@ -51,7 +50,6 @@ $barang = mysqli_query($koneksi, "SELECT * FROM barang");
                         <label>Jenis Transaksi</label>
                         <select name="jenis_transaksi" id="jenis_transaksi" class="form-control" required onchange="hitungSisa()">
                           <option value="masuk">Masuk</option>
-                          <option value="keluar">Keluar</option>
                         </select>
                       </div>
                       <div class="form-group">
@@ -101,26 +99,38 @@ $barang = mysqli_query($koneksi, "SELECT * FROM barang");
 <?php include 'view/template/script.php'; ?>
 <script>
   function getStokTerakhir(idBarang) {
-    fetch(`get_stok.php?id_barang=${idBarang}`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('stok_sebelumnya').value = data.sisa_stok || 0
-        hitungSisa()
-      })
+    if (idBarang) {
+      fetch(`index.php?page=controller/InventoryController&get_stok=1&id_barang=${idBarang}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('stok_sebelumnya').value = data.sisa_stok || 0;
+          hitungSisa();
+        })
+        .catch(error => {
+          console.log('Error:', error);
+          document.getElementById('stok_sebelumnya').value = 0;
+          hitungSisa();
+        });
+    } else {
+      document.getElementById('stok_sebelumnya').value = '';
+      document.getElementById('sisa_stok').value = '';
+    }
   }
 
   function hitungSisa() {
-    const stok = parseInt(document.getElementById('stok_sebelumnya').value) || 0
-    const jumlah = parseInt(document.getElementById('jumlah').value) || 0
-    const jenis = document.getElementById('jenis_transaksi').value
-    let sisa = jenis === 'masuk' ? stok + jumlah : stok - jumlah
-    if (sisa < 0) {
-      alert("Jumlah keluar melebihi stok tersedia!")
-      document.getElementById('jumlah').value = ''
-      sisa = stok
+    const stok = parseInt(document.getElementById('stok_sebelumnya').value) || 0;
+    const jumlah = parseInt(document.getElementById('jumlah').value) || 0;
+    const jenis = document.getElementById('jenis_transaksi').value;
+    
+    let sisa = jenis === 'masuk' ? stok + jumlah : stok - jumlah;
+    
+    if (jenis === 'keluar' && sisa < 0) {
+      alert("Jumlah keluar melebihi stok tersedia!");
+      document.getElementById('jumlah').value = '';
+      sisa = stok;
     }
-    document.getElementById('sisa_stok').value = sisa
-    document.getElementById('stok_sebelumnya').value = data.sisa_stok || 0
+    
+    document.getElementById('sisa_stok').value = sisa >= 0 ? sisa : stok;
   }
 </script>
 </body>

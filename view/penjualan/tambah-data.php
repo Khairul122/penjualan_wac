@@ -14,7 +14,18 @@ if ($lastCode) {
     $kode_penjualan = 'PJL001';
 }
 
-$produk = mysqli_query($koneksi, "SELECT * FROM barang");
+$produk_query = "SELECT b.*, 
+                 COALESCE(
+                     (SELECT i.sisa_stok 
+                      FROM inventory i 
+                      WHERE i.id_barang = b.id_barang 
+                      ORDER BY i.id_inventory DESC 
+                      LIMIT 1), 0
+                 ) as stok_tersedia
+                 FROM barang b 
+                 ORDER BY b.nama_barang";
+$produk = mysqli_query($koneksi, $produk_query);
+
 $bulan_indo = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
@@ -55,8 +66,8 @@ $tanggal_indo = "$tgl $bln $thn";
                           <option value="<?= $row['id_barang'] ?>"
                                   data-nama="<?= $row['nama_barang'] ?>"
                                   data-harga="<?= $row['harga_jual'] ?>"
-                                  data-stok="<?= $row['stok'] ?>">
-                            <?= $row['nama_barang'] ?>
+                                  data-stok="<?= $row['stok_tersedia'] ?>">
+                            <?= $row['nama_barang'] ?> (Stok: <?= $row['stok_tersedia'] ?>)
                           </option>
                         <?php endwhile; ?>
                       </select>
@@ -79,6 +90,7 @@ $tanggal_indo = "$tgl $bln $thn";
                       <thead>
                         <tr>
                           <th>Produk</th>
+                          <th>Stok Tersedia</th>
                           <th>Harga</th>
                           <th>Jumlah</th>
                           <th>Subtotal</th>
@@ -131,6 +143,20 @@ $tanggal_indo = "$tgl $bln $thn";
     return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
 
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+
+  function getStokTersedia(idBarang) {
+    const produk = document.getElementById('produk');
+    for (let i = 0; i < produk.options.length; i++) {
+      if (produk.options[i].value === idBarang) {
+        return parseInt(produk.options[i].getAttribute('data-stok'));
+      }
+    }
+    return 0;
+  }
+
   function tambahBarang() {
     const produk = document.getElementById('produk');
     const jumlah = parseInt(document.getElementById('jumlah').value);
@@ -146,8 +172,13 @@ $tanggal_indo = "$tgl $bln $thn";
     const harga = parseInt(selected.getAttribute('data-harga'));
     const stok = parseInt(selected.getAttribute('data-stok'));
 
+    if (stok <= 0) {
+      alert('Stok produk habis');
+      return;
+    }
+
     if (jumlah > stok) {
-      alert(`Jumlah melebihi stok (${stok})`);
+      alert(`Jumlah melebihi stok tersedia (${stok})`);
       return;
     }
 
@@ -155,7 +186,7 @@ $tanggal_indo = "$tgl $bln $thn";
     if (existingIndex >= 0) {
       const newJumlah = barangList[existingIndex].jumlah + jumlah;
       if (newJumlah > stok) {
-        alert(`Total jumlah melebihi stok (${stok})`);
+        alert(`Total jumlah melebihi stok tersedia (${stok})`);
         return;
       }
       barangList[existingIndex].jumlah = newJumlah;
@@ -167,7 +198,8 @@ $tanggal_indo = "$tgl $bln $thn";
         nama: nama,
         harga: harga,
         jumlah: jumlah,
-        subtotal: subtotal
+        subtotal: subtotal,
+        stok_tersedia: stok
       });
     }
 
@@ -184,13 +216,36 @@ $tanggal_indo = "$tgl $bln $thn";
 
     barangList.forEach((item, index) => {
       total += item.subtotal;
+      const sisaStok = item.stok_tersedia - item.jumlah;
       tbody.innerHTML += `
         <tr>
-          <td><input type="hidden" name="id_barang[]" value="${item.id_barang}">${item.nama}</td>
+          <td>
+            <input type="hidden" name="id_barang[]" value="${item.id_barang}">
+            ${item.nama}
+          </td>
+          <td>
+            <span class="badge ${sisaStok <= 0 ? 'bg-danger' : sisaStok <= 10 ? 'bg-warning' : 'bg-success'}">
+              ${formatNumber(sisaStok)}
+            </span>
+          </td>
           <td>${formatRupiah(item.harga)}</td>
-          <td><input type="hidden" name="jumlah[]" value="${item.jumlah}">${item.jumlah}</td>
-          <td><input type="hidden" name="subtotal[]" value="${item.subtotal}">${formatRupiah(item.subtotal)}</td>
-          <td><button type="button" class="btn btn-danger btn-sm" onclick="hapusItem(${index})"><i class="mdi mdi-delete"></i></button></td>
+          <td>
+            <input type="hidden" name="jumlah[]" value="${item.jumlah}">
+            <div class="d-flex align-items-center">
+              <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="updateJumlah(${index}, -1)">-</button>
+              <span class="mx-2">${item.jumlah}</span>
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-1" onclick="updateJumlah(${index}, 1)">+</button>
+            </div>
+          </td>
+          <td>
+            <input type="hidden" name="subtotal[]" value="${item.subtotal}">
+            ${formatRupiah(item.subtotal)}
+          </td>
+          <td>
+            <button type="button" class="btn btn-danger btn-sm" onclick="hapusItem(${index})">
+              <i class="mdi mdi-delete"></i>
+            </button>
+          </td>
         </tr>`;
     });
 
@@ -207,13 +262,35 @@ $tanggal_indo = "$tgl $bln $thn";
     document.getElementById('btn-simpan').disabled = barangList.length === 0;
   }
 
+  function updateJumlah(index, perubahan) {
+    const item = barangList[index];
+    const jumlahBaru = item.jumlah + perubahan;
+    
+    if (jumlahBaru <= 0) {
+      hapusItem(index);
+      return;
+    }
+    
+    if (jumlahBaru > item.stok_tersedia) {
+      alert(`Jumlah tidak boleh melebihi stok tersedia (${item.stok_tersedia})`);
+      return;
+    }
+    
+    item.jumlah = jumlahBaru;
+    item.subtotal = item.harga * jumlahBaru;
+    renderTabel();
+  }
+
   function hapusItem(index) {
     barangList.splice(index, 1);
     renderTabel();
   }
 
   document.getElementById('nominal_bayar').addEventListener('input', function () {
-    let bayar = parseInt(this.value.replace(/[^0-9]/g, '')) || 0;
+    let value = this.value.replace(/[^0-9]/g, '');
+    this.value = formatNumber(value);
+    
+    let bayar = parseInt(value) || 0;
     let kembalian = bayar - total;
     document.getElementById('kembalian').value = formatRupiah(kembalian < 0 ? 0 : kembalian);
   });

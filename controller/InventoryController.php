@@ -1,22 +1,40 @@
 <?php
 include 'koneksi.php';
 
+if (isset($_GET['get_stok']) && isset($_GET['id_barang'])) {
+    $id_barang = mysqli_real_escape_string($koneksi, $_GET['id_barang']);
+    $query = "SELECT sisa_stok FROM inventory WHERE id_barang = '$id_barang' ORDER BY tanggal DESC, id_inventory DESC LIMIT 1";
+    $result = mysqli_query($koneksi, $query);
+    
+    if ($result && mysqli_num_rows($result) > 0) {
+        $data = mysqli_fetch_assoc($result);
+        echo json_encode(['sisa_stok' => (int)$data['sisa_stok']]);
+    } else {
+        echo json_encode(['sisa_stok' => 0]);
+    }
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_inventory'])) {
     $kode_transaksi = $_POST['kode_transaksi'];
     $id_barang = $_POST['id_barang'];
     $jenis = $_POST['jenis_transaksi'];
     $jumlah = (int) $_POST['jumlah'];
     $tanggal = $_POST['tanggal'];
-    $sisa_stok = (int) $_POST['sisa_stok'];
     $keterangan = mysqli_real_escape_string($koneksi, $_POST['keterangan']);
 
     $stok_q = mysqli_query($koneksi, "SELECT sisa_stok FROM inventory WHERE id_barang='$id_barang' ORDER BY tanggal DESC, id_inventory DESC LIMIT 1");
     $stok_row = mysqli_fetch_assoc($stok_q);
     $stok_sebelumnya = $stok_row ? (int) $stok_row['sisa_stok'] : 0;
 
-    if ($jenis === 'keluar' && $jumlah > $stok_sebelumnya) {
-        echo "<script>alert('Stok tidak mencukupi!');window.history.back();</script>";
-        exit;
+    if ($jenis === 'masuk') {
+        $sisa_stok = $stok_sebelumnya + $jumlah;
+    } else {
+        if ($jumlah > $stok_sebelumnya) {
+            echo "<script>alert('Stok tidak mencukupi!');window.history.back();</script>";
+            exit;
+        }
+        $sisa_stok = $stok_sebelumnya - $jumlah;
     }
 
     $query = "INSERT INTO inventory (id_barang, kode_transaksi, jenis_transaksi, tanggal, jumlah, sisa_stok, keterangan)
@@ -37,16 +55,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_inventory'])) {
     $jenis = $_POST['jenis_transaksi'];
     $jumlah = (int) $_POST['jumlah'];
     $tanggal = $_POST['tanggal'];
-    $sisa_stok = (int) $_POST['sisa_stok'];
     $keterangan = mysqli_real_escape_string($koneksi, $_POST['keterangan']);
 
     $stok_q = mysqli_query($koneksi, "SELECT sisa_stok FROM inventory WHERE id_barang='$id_barang' AND id_inventory != '$id_inventory' ORDER BY tanggal DESC, id_inventory DESC LIMIT 1");
     $stok_row = mysqli_fetch_assoc($stok_q);
     $stok_sebelumnya = $stok_row ? (int) $stok_row['sisa_stok'] : 0;
 
-    if ($jenis === 'keluar' && $jumlah > $stok_sebelumnya) {
-        echo "<script>alert('Stok tidak mencukupi!');window.history.back();</script>";
-        exit;
+    if ($jenis === 'masuk') {
+        $sisa_stok = $stok_sebelumnya + $jumlah;
+    } else {
+        if ($jumlah > $stok_sebelumnya) {
+            echo "<script>alert('Stok tidak mencukupi!');window.history.back();</script>";
+            exit;
+        }
+        $sisa_stok = $stok_sebelumnya - $jumlah;
     }
 
     $query = "UPDATE inventory SET 

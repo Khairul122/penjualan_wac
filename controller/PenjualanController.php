@@ -97,6 +97,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     mysqli_begin_transaction($koneksi);
     
     try {
+        for ($i = 0; $i < count($id_barang); $i++) {
+            $barang_id = mysqli_real_escape_string($koneksi, $id_barang[$i]);
+            $qty = mysqli_real_escape_string($koneksi, $jumlah[$i]);
+            
+            $query_stok = "SELECT sisa_stok FROM inventory 
+                          WHERE id_barang = '$barang_id' 
+                          ORDER BY id_inventory DESC LIMIT 1";
+            $result_stok = mysqli_query($koneksi, $query_stok);
+            
+            if (mysqli_num_rows($result_stok) > 0) {
+                $row_stok = mysqli_fetch_assoc($result_stok);
+                $stok_tersedia = $row_stok['sisa_stok'];
+                
+                if ($qty > $stok_tersedia) {
+                    throw new Exception("Stok tidak mencukupi untuk produk ID: $barang_id (tersedia: $stok_tersedia, diminta: $qty)");
+                }
+            } else {
+                throw new Exception("Stok produk tidak ditemukan di inventory untuk ID: $barang_id");
+            }
+        }
+        
         $query_penjualan = "INSERT INTO penjualan (kode_penjualan, total_harga, nominal_bayar, kembalian, id_users) 
                             VALUES ('$kode_penjualan', '$total_harga', '$nominal_bayar', '$kembalian', '$id_users')";
         
@@ -128,21 +149,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                           ORDER BY id_inventory DESC LIMIT 1";
             $result_stok = mysqli_query($koneksi, $query_stok);
             
-            if (mysqli_num_rows($result_stok) > 0) {
-                $row_stok = mysqli_fetch_assoc($result_stok);
-                $stok_terbaru = $row_stok['sisa_stok'];
-                $sisa_stok = $stok_terbaru - $qty;
-                
-                $query_inventory = "INSERT INTO inventory (id_barang, kode_transaksi, jenis_transaksi, jumlah, sisa_stok, keterangan) 
-                                   VALUES ('$barang_id', '$kode_penjualan', 'keluar', '$qty', '$sisa_stok', 'Penjualan produk')";
-                
-                if (!mysqli_query($koneksi, $query_inventory)) {
-                    throw new Exception("Error: " . mysqli_error($koneksi));
-                }
-            } else {
-                throw new Exception("Stok produk tidak ditemukan di inventory");
+            $row_stok = mysqli_fetch_assoc($result_stok);
+            $stok_terbaru = $row_stok['sisa_stok'];
+            $sisa_stok = $stok_terbaru - $qty;
+            
+            $query_inventory = "INSERT INTO inventory (id_barang, kode_transaksi, jenis_transaksi, jumlah, sisa_stok, keterangan) 
+                               VALUES ('$barang_id', '$kode_penjualan', 'keluar', '$qty', '$sisa_stok', 'Penjualan produk')";
+            
+            if (!mysqli_query($koneksi, $query_inventory)) {
+                throw new Exception("Error: " . mysqli_error($koneksi));
             }
         }
+
+        mysqli_commit($koneksi);
 
         echo "<script>
             alert('Transaksi berhasil disimpan!');
@@ -160,3 +179,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 }
+
+?>
